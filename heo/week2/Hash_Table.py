@@ -39,18 +39,15 @@ class HashTable:
 		startslot = self.hashfunc(key, len(self.slots))
 
 		data = None
-		stop = False
-		found = False
 		position = startslot
-		while self.slots[position] != None and \
-							not found and not stop:
+		while self.slots[position] != None:
 			if self.slots[position] == key:
-				found = True
 				data = self.data[position]
+				break
 			else:
 				position = self.rehash(position, len(self.slots))
 				if position == startslot:
-					stop = True
+					break
 		return data
 
 
