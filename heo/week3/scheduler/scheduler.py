@@ -1,21 +1,20 @@
 import priority_queue as pq
+import time
+import threading
+from datetime import datetime
 
 class Scheduler:
     # Constructor
     def __init__(self):
         self.queue = pq.PriorityQueueHeap()
 
+    # Get command from user
     def prompt(self):
-        command = 'add 10:20 job'
-        self.parser(command)
-        command = 'add 9:20 alarm'
-        self.parser(command)
-        command = 'add 7:20 method'
-        self.parser(command)
-        command = 'add 5:20 method'
-        self.parser(command)
-        command = 'list'
-        self.parser(command)
+        command = input()
+        result = self.parser(command)
+
+        if result == -1:
+            return -1
 
     # Parsing the command
     def parser(self, command):
@@ -25,6 +24,8 @@ class Scheduler:
             self.add(command_tokens[1], command_tokens[2])
         elif command_tokens[0] == 'list':
             self.list()
+        elif command_tokens[0] == 'exit':
+            return -1
 
     # Add the job to the scheduler
     def add(self, time, job_name):
@@ -33,37 +34,71 @@ class Scheduler:
 
     # Show pending jobs
     def list(self):
-        # print('[Job Scheduler]\n')
-        print('Rank\t     Job')
-        new_queue = pq.PriorityQueueHeap()
-        new_queue.heap = self.queue.heap[:]
-        new_queue.size = self.queue.size
-        th = 1
-        while(1):
-            if new_queue.size == 0:
-                break
-            showing_job = new_queue.delete()
-            str_time = str(showing_job[0])
-            str_time = str_time[:-2] + ':' + str_time[-2:]
-            print(' ', th, '\t', str_time, showing_job[1])
-            th += 1
+        if self.queue.size == 0:
+            print('Job Queue is empty!')
+        else:
+            # print('[Job Scheduler]\n')
+            print('Rank\t     Job')
+            new_queue = pq.PriorityQueueHeap()
+            new_queue.heap = self.queue.heap[:]
+            new_queue.size = self.queue.size
+            th = 1
+            while(1):
+                if new_queue.size == 0:
+                    break
+                showing_job = new_queue.delete()
+                str_time = str(showing_job[0])
+                str_time = str_time[:-2] + ':' + str_time[-2:]
+                print(' ', th, '\t', str_time, showing_job[1])
+                th += 1
 
+    # Compare time between target time and now(thread)
     def time_check(self):
-        pass
+        while True:
+            now = datetime.now()
+            str_min = now.minute
 
-    def run(self):
-        pass
+            if str_min < 10:
+                str_min = '0' + str(str_min)
+
+            str_now = str(now.hour)  + ':' + str(str_min)
+            
+            if self.queue.size >= 1:
+                target_time = str(self.queue.heap[1][0])
+                target_time = target_time[:-2] + ':' + target_time[-2:]
+
+                print(str_now, target_time)
+                if str_now == str(target_time):
+                    print(str_now + ' is ' + target_time)
+                    self.run(target_time)
+                else:
+                    print(str_now + ' is not ' + target_time)
+            else:
+                print('Job Queue is empty!')
+
+            time.sleep(5)
+
+    # Run job at target time
+    def run(self, target_time):
+        job = self.queue.delete()
+        time.sleep(3)
+        print(target_time, job[1], 'complted!')
+
 
 if __name__ == '__main__':
     sched = Scheduler()
-    sched.prompt()
-    # print(sched.queue.delete())
-    # print(sched.queue.delete())
-    # print(sched.queue.delete())
-    # print(sched.queue.delete())
-    # print(sched.queue.delete())
-    # while(1):
-    #     newline = sched.prompt()
-    #     print(newline)
-    #     if newline == 'exit\n':
-    #         break
+    sched.parser('add 16:50 asb')
+    sched.list()
+    
+    t = threading.Thread(target=sched.time_check())
+    t.daemon = True
+    t.start()
+
+    while(1):
+        t2.threading.Thread(target=sched.prompt())
+        t2.start()
+        
+
+        if result == -1:
+            print('Good-bye')
+            break
