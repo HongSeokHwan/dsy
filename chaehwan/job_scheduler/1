@@ -1,0 +1,44 @@
+import unittest
+import priority_queue
+import heapq
+
+class TestPriorityQueue(unittest.TestCase):
+    def test_swap(self):
+        pq = priority_queue.PriorityQueue([3, 4])
+        pq.swap(0,1)
+        self.assertEqual(pq.queue, [4, 3])
+
+    def test_compare(self):
+        pq = priority_queue.PriorityQueue([3, 4, 2])
+        self.assertEqual(pq.compare(pq.queue[0], pq.queue[1]), False)
+        self.assertEqual(pq.compare(pq.queue[1], pq.queue[2]), True)
+
+    def test_heapify(self):
+        test_input = []
+        heap = []
+        for i in range(10):
+            test_input.append(i)
+            heapq.heappush(heap, i)
+        pq = priority_queue.PriorityQueue(test_input)
+        self.assertEqual(pq.queue, heap)
+        # Verify the result after heapify function is same as 
+        # the result got from the heapq library
+        pq.heapify(0)
+        heapq.heapify(heap)
+        self.assertEqual(pq.queue, heap)
+
+    def test_insert(self):
+        pq = priority_queue.PriorityQueue()
+        pass
+
+    def test_find_max(self):
+        pass
+
+    def test_extract_max(self):
+        pass
+
+    def test_update_item(self):
+        pass
+
+if __name__ == '__main__':
+    unittest.main()
