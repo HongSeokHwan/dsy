@@ -3,6 +3,7 @@ import time
 import threading
 from datetime import datetime
 
+
 class Scheduler:
     # Constructor
     def __init__(self):
@@ -14,7 +15,9 @@ class Scheduler:
         result = self.parser(command)
 
         if result == -1:
-            return -1
+            print('Good-bye')
+
+        threading.Timer(0.5, self.prompt).start()
 
     # Parsing the command
     def parser(self, command):
@@ -54,29 +57,27 @@ class Scheduler:
 
     # Compare time between target time and now(thread)
     def time_check(self):
-        while True:
-            now = datetime.now()
-            str_min = now.minute
+        now = datetime.now()
+        str_min = now.minute
 
-            if str_min < 10:
-                str_min = '0' + str(str_min)
+        if str_min < 10:
+            str_min = '0' + str(str_min)
 
-            str_now = str(now.hour)  + ':' + str(str_min)
+        str_now = str(now.hour)  + ':' + str(str_min)
             
-            if self.queue.size >= 1:
-                target_time = str(self.queue.heap[1][0])
-                target_time = target_time[:-2] + ':' + target_time[-2:]
+        if self.queue.size >= 1:
+            target_time = str(self.queue.heap[1][0])
+            target_time = target_time[:-2] + ':' + target_time[-2:]
 
-                print(str_now, target_time)
-                if str_now == str(target_time):
-                    print(str_now + ' is ' + target_time)
-                    self.run(target_time)
-                else:
-                    print(str_now + ' is not ' + target_time)
+            if str_now == str(target_time):
+                print(str_now + ' is ' + target_time + '\n')
+                self.run(target_time)
             else:
-                print('Job Queue is empty!')
+                print(str_now + ' is not ' + target_time+ '\n')
+        else:
+            print('Job Queue is empty!')
 
-            time.sleep(5)
+        threading.Timer(10.0, self.time_check).start()
 
     # Run job at target time
     def run(self, target_time):
@@ -85,20 +86,11 @@ class Scheduler:
         print(target_time, job[1], 'complted!')
 
 
+def main():
+    sched = Scheduler()      
+    sched.prompt()
+    sched.time_check()
+
+
 if __name__ == '__main__':
-    sched = Scheduler()
-    sched.parser('add 16:50 asb')
-    sched.list()
-    
-    t = threading.Thread(target=sched.time_check())
-    t.daemon = True
-    t.start()
-
-    while(1):
-        t2.threading.Thread(target=sched.prompt())
-        t2.start()
-        
-
-        if result == -1:
-            print('Good-bye')
-            break
+    main()
