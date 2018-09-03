@@ -1,17 +1,16 @@
+import cmd
 import os
-import sys
 import threading
 import time
-import cmd
 from datetime import datetime
-from datetime import timedelta
 
 import priority_queue
 
+
 class Event(object):
-    def __init__(self, time=datetime.now(), 
-                       priority="mid", action="python", 
-                       parameter=None, flag=None):
+    def __init__(self, time=datetime.now(),
+                 priority="mid", action="python",
+                 parameter=None, flag=None):
         self.time = time
         self.priority = priority
         self.action = action
@@ -27,17 +26,18 @@ class Event(object):
 
     def __lt__(self, other):
         if self.time < other.time:
-            return True 
+            return True
         elif self.time == other.time:
             if self.priority > self.priority:
                 return True
         else:
             return False
 
+
 class Scheduler(object):
     def __init__(self):
         self.scheduling_queue = priority_queue.PriorityQueue()
-        self.priority_level = {"high": 3, "mid": 2, "low" : 1}
+        self.priority_level = {"high": 3, "mid": 2, "low": 1}
         self.flag_set = ["--once", "--daily", "--weekly", "--monthly"]
 
     def convert_into_time(self, time):
@@ -61,8 +61,8 @@ class Scheduler(object):
         return flag
 
     def register_event(self, time=datetime.now(),
-                             priority="mid", action="python", 
-                             parameter=None, flag="--once"):
+                       priority="mid", action="python",
+                       parameter=None, flag="--once"):
         time = self.convert_into_time(time)
         priority = self.set_priority(priority)
         flag = self.set_flag(flag)
@@ -89,7 +89,7 @@ class Scheduler(object):
             for event in self.scheduling_queue.queue:
                 if event.time >= start_time and event.time <= end_time:
                     matched_event.append(event)
-            return matched_event 
+            return matched_event
 
     def search_event_index(self, time):
         time = self.convert_into_time(time)
@@ -101,7 +101,7 @@ class Scheduler(object):
 
     def search_upcoming_event(self):
         return self.scheduling_queue.find_top()
-   
+
     def extract_upcoming_event(self):
         return self.scheduling_queue.extract_top()
 
@@ -172,7 +172,7 @@ class Scheduler(object):
                     action_command = event.action + ' ' + event.parameter
                 os.system(action_command)
                 self.extract_upcoming_event()
-   
+
 
 class CommandPrompt(cmd.Cmd):
     def __init__(self):
@@ -191,7 +191,7 @@ class CommandPrompt(cmd.Cmd):
         print("ex)", end="")
         print("""register 2018.09.01:17:45 python test_scheduler.py 
             --high --daily""")
-    
+
     def do_update(self, args):
         self.app.update_event(*self.parse(args))
 
@@ -207,7 +207,7 @@ class CommandPrompt(cmd.Cmd):
         print("다음의 형식으로 입력하세요.")
         print("cancel <time>")
         print("ex) cancel 2018.08.31:17:45")
-    
+
     def do_show(self, args):
         self.app.show_event(*self.parse(args))
 
@@ -217,32 +217,25 @@ class CommandPrompt(cmd.Cmd):
         print("show <time> ex) show 2018.08.31:17:45")
         print("시간을 입력하지 않으면 등록된 모든 일정을 출력합니다.")
         print("show")
-        
+
     def do_exit(self):
         pass
 
     def process_command(self):
-        self.lock.acquire()
         self.cmdloop()
-        self.lock.release()
 
     def execute(self):
-        self.lock.acquire()
-        self.app.run()
-        self.lock.release()
+        while True:
+            time.sleep(1)
+            self.app.run()
 
     def parse(self, arguments):
         return tuple(arguments.split())
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     command_prompt = CommandPrompt()
-    prompt_execution = threading.Thread(
-                target=command_prompt.process_command)
     time_check_execution = threading.Thread(
-                target=command_prompt.execute, daemon=True)
-    prompt_execution.start()
+        target=command_prompt.execute, daemon=True)
     time_check_execution.start()
-    prompt_execution.join()
-    time_check_execution.join()
-    
+    command_prompt.process_command()
