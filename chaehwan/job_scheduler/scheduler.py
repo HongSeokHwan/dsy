@@ -180,6 +180,7 @@ class CommandPrompt(cmd.Cmd):
         self.prompt = "(Scheduler)"
         super().__init__()
         self.app = Scheduler()
+        self.lock = threading.Lock()
 
     def do_register(self, args):
         self.app.register_event(*self.parse(args))
@@ -239,8 +240,9 @@ if __name__=="__main__":
     prompt_execution = threading.Thread(
                 target=command_prompt.process_command)
     time_check_execution = threading.Thread(
-                target=command_prompt.execute)
+                target=command_prompt.execute, daemon=True)
     prompt_execution.start()
     time_check_execution.start()
-
+    prompt_execution.join()
+    time_check_execution.join()
     
