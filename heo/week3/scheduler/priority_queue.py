@@ -36,6 +36,18 @@ class PriorityQueueHeap:
         self.heapify(1)
         return highest
 
+    def delete_arbitary(self, name):
+        for i, target in enumerate(self.heap):
+            if i == 0:
+                continue
+            if name == self.heap[i][1]:
+                for idx in range(i, len(self.heap)-1):
+                    self.heap[idx][1] = self.heap[idx+1][1]
+                    self.heap[idx][0] = self.heap[idx+1][0]
+                self.heap.pop()
+                self.size = self.size - 1
+
+
     def find_min_child(self, i):
         if i * 2 == self.size:
             return i * 2
