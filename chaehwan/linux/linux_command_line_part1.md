@@ -584,3 +584,486 @@ unalias foo
 
 참고로 alias만 입력하면 설정된 alias를 확인할 수 있다.
 
+
+# Chapter6. Redirection
+
+Redirection, 방향을 바꾸어 준다는 말이다. 무엇의 방향을 바꾸어준다는 말일까?
+Redirection을 이해하려면 먼저 standard input, standard output, standard error
+를 이해해야 한다. 
+
+우리가 프로그램을 실행하면 그 결과는 크게 두 가지가 첫 번째는 실제 그 프로그램이 
+실행되어서 출력하는 값 또는 결과다. 두 번째는 상태나 에러다. 프로그램이나 명령어가 
+인자가 없다거나 찾을 수 없다거나 하는 이유로 에러를 출력하고 멈출 수 있다.
+
+리눅스는 앞서 살펴봤듯이 모든 게 파일이다. 예를 들어 ls 명령을 실행하면 
+그 결과는 standard output이라는 파일로 간다. 그리고 그 상태 메세지는 
+standard error라는 파일로 보내지게 된다. 두 파일은 디스크에 쓰여지지 않고
+화면에 출력된다. 그래서 우리가 결과값을 볼 수 있는 것이다.
+
+우리는 대개 프로그램의 입력을 keyboard로 받는다. 이를 standard input이라고
+하는데 키보드와 연결되어 있다고 보면 된다. 
+
+redirection은 I/O redirection을 말하는데 즉 입력과 출력의 방향을 바꾸어 줄 수 
+있다는 것이다. 예를 들어 대개 키보드로 입력을 받아서 화면으로 출력하는데 이를 
+화면에 출력하지 않고 다른 파일에 출력해서 쓰는 것이다.
+
+그런데 왜 이런 개념이 필요할까? 종종 명령어의 결과를 저장해두면 유용한 상황이 있기
+때문이다.
+
+예를 들어 다음과 같은 명령어를 실행하면 화면에 결과가 출력되지 않고 ls-output.txt
+라는 파일에 내용이 써진다.
+
+```bash
+ls -l /usr/bin > ls-output.txt
+```
+
+여기서 사용된 '>'는 redirection 연산자라고 한다. 이 연산자를 통해 redirection을 
+실행할 수 있다.
+
+그렇다면 명령어 없이 > ls-output.txt를 입력하면 어떻게 될까? 새로운 빈 파일이 
+생성된다.
+
+```bash
+> ls-output.txt
+```
+
+그렇다면 안 덮어쓰고 덧붙여 쓰려면 어떻게 해야 할까?
+
+```bash
+ls -l /usr/bin >> ls-output.txt
+```
+
+위와 같은 명령어로 덧붙여 쓰는 것이 가능하다. 기존 파일이 없으면 그냥 > 를 사용해서
+생성한다.
+
+## stderr에 redirect하려면?
+
+만약 위와 같이 존재하지 않는 디렉토리에 대해 ls 명령어를 적용한다면? 
+
+```bash
+ls -l /bin/usr > ls-output.txt
+```
+
+오류다. 스크린에 오류가 출력된다. 그럼 왜 > 연산자를 사용해도 바로 스크린에 
+출력되는 것일까? redirection을 적용했으니 텍스트에 담겨야 할 것이다.
+
+이유는 ls 명령어가 오류는 standard output으로 보내지 않기 때문이다.
+대신 stderr 즉 standard error로 보낸다. 그렇다면 stderr는 어떻게 
+redirect할까? 
+
+stderr를 redirect하는 것은 > 연산자로 부족하다. file discriptor를 활용해야
+한다. 
+
+프로그램은 파일 스트림에 출력을 만드는데 시스템에서 첫 번째 스트림 3개를
+0 : standard input
+1 : standard output
+2 : standard error
+이렇게 참조한다. 그러니 standard error의 번호인 2번으로 standard error을 
+참조한다. 아래와 같이 redirect해주면 된다.
+
+```bash
+ls -l /bin/usr 2> ls-error.txt
+```
+
+참고) 
+파일 디스크립터
+http://dev-ahn.tistory.com/96
+
+파일 디스크립터
+출처 : http://mintnlatte.tistory.com/266
+
+## stdout과 stderr를 함께 담으려면?
+
+그리고 만약 stdout과 stderr를 한 파일을 담고 싶다면 아래와 같이 처리하면
+된다.
+
+```bash
+ls -l /bin/usr > ls-output.txt 2>&1
+```
+
+순서가 중요하다. 아래와 같이 하면 에러가 난다.
+
+```bash
+2>&1 > ls-output.txt 
+```
+
+그리고 최근에는 아래와 같이 redirect해준다.
+
+```bash
+ls -l /bin/usr &> ls-output.txt
+```
+
+## 원하지 않는 출력을 처리하려면?
+
+리다이렉트하면서 원하지 않는 출력을 처리하려면 어떻게 하면 될까?
+특히 에러나 상태 메시지 말이다. 이땐 아래와 같이 dev 디렉토리 밑에
+/dev/null 이라는 파일이 있는데 이 파일은 input을 받아서 아무 것도 하지
+않는다. (이 파일을 bit bucket이라고 하기도 한다.)
+
+```bash
+ls -l /bin/usr 2> /dev/null
+```
+
+## standard input을 redirect하려면?
+
+그렇다면 standard input을 redirect하려면 어떻게 해야 할까?
+
+### cat 명령어
+
+cat 명령어는 하나 이상의 파일을 읽어서 standard input에 복사하는 명령어다.
+하나 이상 즉 여러 개의 파일을 arguments로 받을 수 있기 때문에 파일을 합치는 데에도
+사용된다. 만약 멀티미디어 파일처럼 너무 큰 파일이여서 쪼개서 파일을 받았다면 아래와
+같이 합쳐주면 된다.
+
+```bash
+cat movie.mpeg.0* > movie.mpeg
+```
+
+그렇다면 인자 없이 cat을 입력했다면 어떻게 될까?
+
+```bash
+cat
+```
+
+인자를 주지 않으면 입력을 기다린다. default는 stdin이기 때문이다. 
+(Ctrl + d로 종료가 가능하다. EOF라고 알려주는 셈이다.) 
+
+아래와 같이 입력하면 간단하게 텍스트 파일도 만들어낼 수 있다.
+
+```bash
+cat > test.txt
+```
+
+### Pipelines 명령어
+
+standard input을 받아서 redirect하는 방법으로는 pipelines도 있다.
+pipelines는 standard input을 받아서 standard output으로 redirect
+하는 방법이다. 연산자로는 '|'을 사용한다.
+
+command1 | command2
+
+```bash
+ls -l /usr/bin | less
+``` 
+
+위와 같이 활용할 수 있다. 그렇다면 >와 |는 무슨 차이일까? redirect 연산은
+command1 > file1
+즉 command의 결과를 file에 연결시키는 연산이었다.
+반면, pipeline 연산자는 한 명령의 결과를 다른 명령어의 입력으로 연결시킨다.
+command1 | command2
+와 같은 구조가 되는 것이다.
+
+주의해야 할 것이 만약 
+cd /usr/bin
+ls > less
+하면 linux의 less 파일을 덮어쓰기 때문에 박살난다.
+
+### Filters
+
+pipelines는 데이터에 대한 복잡한 연산을 할 때 종종 사용된다.
+그래서 여러 개의 명령 파이프라인에 사용 가능하다.
+이런 방식을 Filter라고 한다. 예는 다음과 같다.
+
+```bash
+ls /bin /usr/bin | sort | less
+```
+
+### uniq
+
+uniq 연산은 sort와 같이 주로 사용되는데 결과에서 duplicate(중복)을
+제거해준다.(default)
+
+예를 들면
+
+```bash
+ls /bin /usr/bin | sort | uniq | less
+```
+
+이렇게 쓰일 수 있다.
+만약 중복을 보고 싶다면 
+
+```bash
+ls /bin /usr/bin | sort | uniq -d | less
+```
+이렇게 사용하면 된다.
+
+### wc(word count)
+
+라인, 단어, 바이트 수를 출력한다.
+
+```bash
+ls /bin /usr/bin | sort | uniq -d | wc -l
+```
+
+위와 같이 작성하면 라인만 출력한다.
+
+### grep
+
+grep은 파일에서 텍스트의 패턴을 찾을 때 사용한다.
+
+grep pattern [file...]
+(여기서 pattern은 정규 표현식 패턴도 가능하다.)
+
+예를 들어 zip이라는 단어를 찾고 싶을 때
+
+```bash
+ls /bin /usr/bin | sort | uniq -d | wc -l
+```
+
+
+# Chapter7. Seeing The World As The Shell Sees It 
+
+## Expansion(확장)
+
+우리가 명령어를 입력하고 엔터를 치면 bash에서는 우리에게는 보이지 않지만 
+몇 가지 과정을 거친다.
+
+예를 들어 echo는 텍스트를 출력하는 명령어인데 다음과 같이 명령하면 
+결과는 예상대로다.
+
+```bash
+echo this is a test
+```
+output : this is a test
+
+하지만 다음과 같이 와일드카드를 사용해서 명령어를 입력하면 Asterisk(*)가 
+출력되지 않고 현재 디렉토리의 파일과 디렉토리를 출력했다.
+
+```bash
+echo *
+```
+output : Desktop Documents ls-output.txt Music Pictures Public Templates
+Videos
+
+그 이유는 shell 안에서는 결과를 출력하기 전에 Asterisk(*)과 같은 와일드카드 등의 
+값들에 대해 그 의미에 맞게 가공하기 때문이다.
+
+이를 Expansion(확장)이라고 한다.
+
+```bash
+echo *
+echo D*
+echo *S
+echo /usr/*/share
+```
+
+위와 같이 명령을 내리면 그 의미에 맞게 결과를 확장해서 출력하는 것이다. 
+
+참고) echo * 를 했을 때 hidden file(숨긴 파일)은 어떻게 처리될까?
+숨긴 파일의 경우 말그대로 숨긴 파일이기 때문에 그 의미를 존중해 출력하지
+않는다. 하지만 방법은 있다.
+
+간단하게는 echo .* 라고 입력하면 된다.
+하지만 이 경우 . (현재 디렉토리), .. (바로 상위의 디렉토리) 까지 함께 출력된다,
+그러므로 다음과 같이 처리하면 된다.
+
+```bash
+echo *
+ls -d .* | less
+echo .[!.]*
+ls -A
+```
+
+Expansion을 거치는 것은 와일드카드만이 아니다.
+* Tilde(~) : 앞서 살펴본 것처럼 ~(User) 라고 입력했을 경우 해당 사용자의 홈 디렉토리를 의미한다.
+* 산술 연산 : echo $((expression)) 이라고 입력하면 expression이 확장된 결과를 확인할 수 있다.
+
+```bash
+echo \$\(\(2+2\)\)
+```
+
+* Brace expansion(중괄호) : {} 안에 문자열의 리스트 또는 수의 범위를 입력해주어서 결과를 출력할 수 있다.
+
+```bash
+echo Front-{A,B,C}-Back
+```
+output : Front-A-Back Front-B-Back Front-C-Back
+
+```bash
+echo {001..15}
+```
+output : 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015
+
+Brace expression을 활용하는 흔한 방법 중 하나는 디렉토리를 생성할 때 사용하는 것이다.
+
+```bash
+mkdir {2007..2009}-{01..12}
+ls
+```
+output : 
+2007-01 2007-07 2008-01 2008-07 2009-01 2009-07
+2007-02 2007-08 2008-02 2008-08 2009-02 2009-08
+2007-03 2007-09 2008-03 2008-09 2009-03 2009-09
+2007-04 2007-10 2008-04 2008-10 2009-04 2009-10
+2007-05 2007-11 2008-05 2008-11 2009-05 2009-11
+2007-06 2007-12 2008-06 2008-12 2009-06 2009-12
+
+굉장히 강력하기 때문에 유용하게 사용할 수 있다.
+
+* Parameter expansion(매개변수 확장) : 시스템에서는 특정 데이터에 대해 이름을 붙여놓았는데 그 시스템 변수에
+대해서도 확장이 가능하다. 셀 스크립트를 작성할 때 유용하게 사용 가능하다.
+
+```bash
+echo \$USER
+```
+output : chaehwan
+
+* Command Substition (명령어 대체) : 명령어에 대해서도 확장은 가능하다. 
+
+```bash
+echo \$(ls)
+```
+output : Desktop Documents ls-output.txt Music Pictures Public Templates
+Videos
+
+## Quoting(따옴표 붙이기) : 원하지 않는 expansion을 막기 위해 사용한다.
+  
+* 첫번째 방법은 큰따옴표로 감싸는 방법이다. 큰따옴표로 감싸면 그 안의 내용은
+특수한 의미를 잃어버리고 일반적인 문자처럼 취급된다.
+하지만 예외도 있다. "$", "\(backslash)", "`(back-quote)"는 예외다. 즉 
+매개변수 확장, 산술 연산 확장, 명령어 대체는 예외가 되는 셈이다.
+* 참고로 ""(큰따옴표)를 붙이면 파일 사이에 공백이 있는 경우 문제가 해결된다.
+ls -l two words.txt는 안되지만 ls -l "two_words.txt"는 된다.
+* 두번째 방법은 작은따옴표로 감싸는 방법이다. 작은따옴표를 사용하면 모든
+확장을 막을 수 있다.
+
+```bash
+$ echo text ~/*.txt {a,b} \$(echo foo) \$((2+2)) $USER
+```
+output : text /home/me/ls-output.txt a b foo 4 me
+
+```bash
+$ echo \"text ~/*.txt {a,b} \$(echo foo) \$((2+2)) $USER\"
+```
+output : text ~/*.txt {a,b} foo 4 me
+
+```bash
+$ echo \'text ~/*.txt {a,b} \$(echo foo) \$((2+2)) $USER\'
+```
+output : text ~/*.txt {a,b} $(echo foo) $((2+2)) $USER
+
+## Escaping characters(이스케이핑)
+
+"$", "!", "&", " " 와 같은 다른 의미를 가지는 문자는 \\(backslash)를
+붙임으로써 다른 특별한 의미가 그 자체로 출력될 수 있다. ''을 Quoting이 
+아니라 정말로 인용구를 감싸는 의도로 사용하고 싶다면 \\(backslash)를 사용하면
+되는 것이다.
+
+
+# Chapter8. Advanced Keyboard Tricks
+
+Linux terminal에서는 최대한 마우스를 사용하지 않고 작업하는 것이 가능하다.
+
+## Command Line editing
+
+1) Cursor movement
+
+가장 먼저 커서를 키보드를 사용해서 이동하는 방법이다.
+
+Ctrl + a : 커서를 라인의 가장 앞으로 이동시킨다.
+Ctrl + e : 커서를 라인의 가장 뒤로 이동시킨다.
+Ctrl + f : 커서를 문자 하나만큼 앞으로 이동시킨다.(->)
+Ctrl + b : 커서를 문자 하나만큼 뒤으로 이동시킨다.(<-)
+Alt + f : 커서를 단어 하나만큼 앞으로 이동시킨다.
+Alt + b : 커서를 단어 하나만큼 뒤로 이동시킨다.
+Ctrl + l : clear 명령과 같다. 화면을 깨끗하게 만든다.
+
+2) Modifying Text
+
+다음은 텍스트를 수정하는 방법이다.
+
+Ctrl + d : 커서 위치에서 문자 하나 지운다.
+Ctrl + t : 커서 위치에서 하나 앞의 위치의 문자와 위치를 바꾼다.
+Alt + t : 커서 위치에서 하나 앞의 단어와 위치를 바꾼다.
+Alt + l : 커서 위치부터 끝까지 모든 문자를 소문자로 바꾼다.
+Alt + u : 커서 위치부터 끝까지 모든 문자를 대문자로 바꾼다.
+
+3) Cutting and Pasting Text
+
+Ctrl + k : 커서 위치에서부터 라인의 끝까지 텍스트를 지운다. 
+Ctrl + u : 커서 위치에서부터 라인의 처음까지 텍스트를 지운다.(Ctrl + k와 반대)
+Alt + d : 커서 위치에서부터 현재 단어의 끝까지 텍스트를 지운다.
+Alt + Backspace : 커서 위치부터 현재 단어의 시작까지 지운다.
+(현재 커서가 단어의 시작이면 이전 단어를 지운다.)
+Ctrl + y : kill당해 버퍼에 있는 텍스트를 가지고 와서 커서 위치에 삽입한다.
+
+참고) The Meta Key
+
+과거에는 꼭 그런 것은 아니었지만 Alt 키가 현대의 메타 키라고 볼 수 있다.
+
+## Completion
+
+명령어를 타이핑하면서 Tab 키를 누르면 자동완성이 되는 것을 확인할 수 있다.
+경로명을 완성하는데 가장 빈번하게 사용된다. 시스템 변수, 명령어 등 다양한 
+곳에서 사용된다.
+
+Tab 키 말고도 자동완성과 관련된 명령어가 있다.
+
+Alt + ? : 가능한 자동완성 목록을 모두 보여준다.
+(Tab 키를 두 번 눌러도 같은 효과가 난다.)
+Alt + * : 가능한 자동완성 목록을 삽입한다. 
+
+## Using History
+
+terminal에서 방향키로 명령어 이력을 살펴볼 수 있는 것을 알아봤다.
+이 명령어 이력은 홈 디렉토리 내부에 .bash_directory에 저장된다.
+
+```bash
+history | less
+```
+
+대개 명령어 500개에서 1000개 정도를 저장한다. 
+
+```bash
+history | grep /usr/bin
+```
+
+```bash
+88 ls -l /usr/bin > ls-output.txt
+```
+
+여기서 88은 이력에서 명령어의 줄번호를 말한다. 우리는 이 88을 가지고
+history expansion을 할 수 있다. 이력 확장인 셈이다.
+
+```bash
+!88
+```
+
+입력해보면 해당 명령어가 실행된다.
+
+history 내역을 가지고 특정 명령어를 검색하는 것도 가능하다. Ctrl + R을
+누른 다음 예를 들어 ls -l 과 같이 특정 명령어를 검색하면 검색이 가능하다.
+검색이 된 다음 엔터를 누르면 실행이 가능하다. 또는 Ctrl + j를 누르면 현재
+커맨드 라인으로 복사가 된다. 그 상태에서 Ctrl + r을 계속 눌러주면 다음 명령어
+를 계속 확인할 수 있다. 
+Ctrl + g 그 다음 Ctrl + c를 누르면 종료가 된다.
+
+다음은 history 관련 명령어다.
+
+Ctrl + p : 이전 명령어 보기
+Ctrl + n : 다음 명령어 보기
+Alt + <- : history의 처음으로 가기
+Alt + -> : history의 끝으로 가기
+Ctrl + r : history에서 명령어 찾기(순차적으로)
+Alt + p : history에서 명령어 찾기(뒤에서부터)
+Alt + n : history에서 명령어 찾기(앞에서부터)
+
+## history expansion
+
+다음은 history expansion 관련 명령어다.
+
+!! : 마지막 명령어를 반복한다.
+!number : history list에서 해당 번호의 명령어를 반복한다.
+!string : history list에서 해당 string으로 시작하는 명령어를 반복한다.
+!?string : history list에서 해당 string을 포함하는 명령어를 반복한다.
+
+참고) script
+
+리눅스 내의 대부분의 프로그램을 스크립트라고 한다.
+다음과 같이 실행된다.
+
+script [file]
+
+
+
+
