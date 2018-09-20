@@ -40,7 +40,7 @@ void *process_a(void *arg)
         for(int i = 0; i < 5; i++)
                 shared_array[i] = 1;
 
-        printf("Process A is complte!\n");
+        printf("Process A is complete!\n");
         printf("Shared array's values are: ");
         for(int i = 0; i < 5; i++)
             printf("%d", shared_array[i]);
@@ -69,7 +69,7 @@ void *process_b(void *arg)
         for(int i = 0; i < 5; i++)
                 shared_array[i] = 2;
 
-        printf("Process B is complte!\n");
+        printf("Process B is complete!\n");
         printf("Shared array's values are: ");
         for(int i = 0; i < 5; i++)
             printf("%d", shared_array[i]);

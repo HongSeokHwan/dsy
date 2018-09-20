@@ -72,7 +72,13 @@ typedef struct _Semaphore
     int value;
 } Semaphore;
 
+typedef struct _Condition
+{
+    int status;
+} Condition;
+
 Semaphore mutex;
+Condition cond;
 struct LinkedList mainlist;
 void *producer(void *arg);
 void *consumer(void *arg);
@@ -82,6 +88,7 @@ int main()
 {
     init(&mainlist);
     mutex.value = 1;
+    cond.status = 0;
 
     pthread_t threads[2];
     pthread_create(&threads[0], NULL, producer, NULL);
@@ -94,32 +101,30 @@ int main()
 }
 
 
-void P()
+void try()
 {
     while(mutex.value <= 0);
+    mutex.value--;
+}
+
+
+void increment()
+{
+    mutex.value++;
+}
+
+
+void wait(int status)
+{
+    mutex.value++;
     printf("%d", mutex.value);
-    mutex.value--;
-}
-
-
-void V()
-{
-    mutex.value++;
-}
-
-
-void wait()
-{
-    mutex.value++;
-    
-    sleep(5);
-
+    while(mutex.value != 1);
     while(mutex.value <= 0);
     mutex.value--;
 }
 
 
-void wakeup()
+void wakeup(int status)
 {
     mutex.value++;
 }
@@ -130,7 +135,7 @@ void *producer(void *arg)
     int i, data;
 
     for(i = 0 ; i < 1000 ; i++){
-        P();
+        try();
 
         if(mainlist.size == 100){
             printf("Ring is full! We should wait consumer!\n");
@@ -141,7 +146,7 @@ void *producer(void *arg)
         insert(&mainlist, data);
         wakeup();
 
-        V();
+        increment();
     }
 }
 
@@ -151,7 +156,7 @@ void *consumer(void *arg)
     int i, data;
 
     for(i = 0 ; i < 1000 ; i++){
-        P();
+        try();
 
         if(mainlist.size == 0){
             printf("Ring is empty! We should wait producer! \n");
@@ -161,7 +166,7 @@ void *consumer(void *arg)
         data = delete(&mainlist);
         wakeup();
 
-        V();
+        increment();
 
         printf("%dth data is %d\n", mainlist.size, data);
     }

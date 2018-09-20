@@ -10,7 +10,7 @@ typedef struct _Semaphore
 } Semaphore;
 
 Semaphore mutex;
-
+int shared_array[5] = {0,0,0,0,0};
 void *process_a(void *arg);
 void *process_b(void *arg);
 
@@ -32,12 +32,8 @@ int main()
 
 void P()
 {
-    while(1){
-        if(mutex.value == 1){
-            mutex.value--;
-            return;
-        }
-    }
+    while(mutex.value <= 0);
+    mutex.value--;
 }
 
 
@@ -46,12 +42,20 @@ void V()
     mutex.value++;
 }
 
+
 void *process_a(void *arg)
 {
     do{
         P();
 
-        printf("Process A is complte!\n");
+        for(int i = 0; i < 5; i++)
+            shared_array[i] = 1;
+
+        printf("Process A is complete!\n");
+        printf("Shared array's values are: ");
+        for(int i = 0; i < 5; i++)
+            printf("%d", shared_array[i]);
+        printf("\n\n");
 
         sleep(5);
 
@@ -67,8 +71,15 @@ void *process_b(void *arg)
     do{
         P(mutex);
 
-        printf("Process B is complte!\n");
+        for(int i = 0; i < 5; i++)
+            shared_array[i] = 2;
 
+        printf("Process B is complete!\n");
+        printf("Shared array's values are: ");
+        for(int i = 0; i < 5; i++)
+            printf("%d", shared_array[i]);
+        printf("\n\n");
+        
         sleep(10);
 
         V(mutex);
