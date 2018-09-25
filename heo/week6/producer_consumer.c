@@ -10,13 +10,16 @@ struct Node{
     struct Node* next;
 };
 
-
 struct LinkedList{
     int size;
     struct Node* head;
     struct Node* tail;
 };
 
+typedef struct _Semaphore
+{
+    int value;
+} Semaphore;
 
 void init(struct LinkedList* plist){
     plist->size = 0;
@@ -66,29 +69,20 @@ int delete(struct LinkedList* plist){
     return data;
 }
 
-
-typedef struct _Semaphore
-{
-    int value;
-} Semaphore;
-
-typedef struct _Condition
-{
-    int status;
-} Condition;
-
 Semaphore mutex;
-Condition cond;
+Semaphore full;
+Semaphore empty;
+
 struct LinkedList mainlist;
 void *producer(void *arg);
 void *consumer(void *arg);
-
 
 int main()
 {
     init(&mainlist);
     mutex.value = 1;
-    cond.status = 0;
+    full.value = 0;
+    empty.value = 100;
 
     pthread_t threads[2];
     pthread_create(&threads[0], NULL, producer, NULL);
@@ -101,73 +95,63 @@ int main()
 }
 
 
-void try()
+void P(int* value)
 {
-    while(mutex.value <= 0);
-    mutex.value--;
+    while((*value) <= 0);
+    (*value)--;
 }
 
 
-void increment()
+void V(int* value, int size)
 {
-    mutex.value++;
-}
-
-
-void wait(int status)
-{
-    mutex.value++;
-    printf("%d", mutex.value);
-    while(mutex.value != 1);
-    while(mutex.value <= 0);
-    mutex.value--;
-}
-
-
-void wakeup(int status)
-{
-    mutex.value++;
+    (*value) += size;
 }
 
 
 void *producer(void *arg)
 {
-    int i, data;
+    int data = 0;
 
-    for(i = 0 ; i < 1000 ; i++){
-        try();
+    do{
+        data++;
+        P(&empty.value);
 
-        if(mainlist.size == 100){
-            printf("Ring is full! We should wait consumer!\n");
-            wait();
+        // when keep inserting items, you got into
+        // infinite loop if there is no condition statement
+        if(mutex.value != 0)
+            P(&mutex.value);
+
+        insert(&mainlist, data);
+
+        if(empty.value <= 0){
+            V(&mutex.value, 1);
+            V(&full.value, 1);
+            printf("Ring is full!\n");
         }
 
-        data = i;
-        insert(&mainlist, data);
-        wakeup();
-
-        increment();
-    }
+    } while(1);
 }
 
 
 void *consumer(void *arg)
 {
-    int i, data;
+    int data[10];
 
-    for(i = 0 ; i < 1000 ; i++){
-        try();
+    do{
+        P(&full.value);
+        P(&mutex.value);
 
-        if(mainlist.size == 0){
-            printf("Ring is empty! We should wait producer! \n");
-            wait();
-        }
+        for(int i = 0; i < 10; i++)
+            data[i] = delete(&mainlist);
 
-        data = delete(&mainlist);
-        wakeup();
+        sleep(2);
 
-        increment();
+        printf("Output datas are\n");
+        for(int i = 0; i < 10; i++)
+            printf("%d\t", data[i]);
+        printf("\t Now, ring has space\n");
 
-        printf("%dth data is %d\n", mainlist.size, data);
-    }
+        V(&mutex.value, 1);
+        V(&empty.value, 10);
+    } while(1);
 }
