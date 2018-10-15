@@ -1,3 +1,5 @@
 .idea
 .pytest_cache
 *.pyc
+.vscode
+.DS_Store
