@@ -120,63 +120,6 @@ element dequeue(list_head* head_node){
     }
 }
 
-/*
-void test_insert(){
-    list_head* task_queue = create_head();
-    insert(task_queue, 3);
-    assert (task_queue->head->data == 3);
-    insert(task_queue, 5);
-    assert (task_queue->head->data == 5);
-}
-
-void test_delete(){
-    list_head* task_queue = create_head();
-    insert(task_queue, 3);
-    insert(task_queue, 5);
-    delete(task_queue, 3);
-    node* result = search(task_queue, 3);
-    assert (result == NULL);
-    delete(task_queue, 5);
-    result = search(task_queue, 5);
-    assert (result == NULL);
-}
-
-void test_search(){
-    list_head* task_queue = create_head();
-    insert(task_queue, 3);
-    insert(task_queue, 5);
-    node* result = search(task_queue, 3);
-    assert (result != NULL);
-    result = search(task_queue, 5);
-    assert (result != NULL);
-}
-
-void test_enqueue(){
-    list_head* task_queue = create_head();
-    enqueue(task_queue, 3);
-    assert (task_queue->head->data == 3);
-    enqueue(task_queue, 5);
-    assert (task_queue->head->data == 3);
-}
-
-
-void test_dequeue(){
-    list_head* task_queue = create_head();
-    enqueue(task_queue, 3);
-    enqueue(task_queue, 5);
-    element result = dequeue(task_queue);
-    assert (result == 3);
-}
-
-void test_list_operation(){
-    test_insert();
-    test_delete();
-    test_search();
-    test_enqueue();
-    test_dequeue();
-}
-*/
-
 void create_thread(pthread_t *thread, void *(*start_routine)(void *), void *args);
 
 typedef struct {

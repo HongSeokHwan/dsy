@@ -166,10 +166,10 @@ class Scheduler(object):
         upcoming_event = self.search_upcoming_event()
         if upcoming_event is not None:
             if self.check_time(upcoming_event):
-                if event.parameter is None:
-                    action_command = event.action
+                if upcoming_event.parameter is None:
+                    action_command = upcoming_event.action
                 else:
-                    action_command = event.action + ' ' + event.parameter
+                    action_command = upcoming_event.action + ' ' + upcoming_event.parameter
                 os.system(action_command)
                 self.extract_upcoming_event()
 
